@@ -67,12 +67,10 @@ Some things stay in English or as they are:
 Grammar has limits too: a name or number dropped into a sentence can't change its ending to fit,
 so a few lines are worded a little stiffly, and in Polish some counts are read as "label: number".
 
-The translations were made with AI and checked the same way, not by native speakers. If a line
-sounds wrong, or something is still in English, tell us on Discord (see Getting help) and say
-which language and what you heard.
-
 YARG also starts in a language from the command line, for example `YARG.exe -lang fr-FR`, and the
 mod follows that too.
+
+These translations were made and checked with AI.
 
 ## Get some songs first
 
