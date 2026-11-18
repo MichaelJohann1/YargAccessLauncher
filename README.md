@@ -19,9 +19,10 @@ covers both. The mod's code is in `MichaelJohann1/YargAccess` and the launcher's
 The launcher has six tabs. Control+Tab and Control+Shift+Tab move between them, and the launcher
 says the name of each tab as you get there.
 
-- Game: choose the Stable or Nightly build of YARG, then install, update or play it. You can also
-  repair the mod (this puts MelonLoader, the mod and the speech files back), reinstall YARG, open
-  the game folder or the logs folder, or uninstall.
+- Game: choose the Stable or Nightly build of YARG, then install, update or play it. Use Stable.
+  The mod is built and tested against Stable, and Nightly changes often, so the mod will most
+  likely not work with it. You can also repair the mod (this puts MelonLoader, the mod and the
+  speech files back), reinstall YARG, open the game folder or the logs folder, or uninstall.
 - News: YARG's news articles.
 - DLC: YARG's official setlists and venues. Install, update or delete them here.
 - Download songs through Chorus: search Chorus Encore for charts, hear a preview played with the
