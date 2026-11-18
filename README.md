@@ -48,6 +48,10 @@ The launcher can get them for you. The DLC tab has YARG's official setlists, and
 songs through Chorus tab finds single charts made by the community. If YARG was open while you
 downloaded, choose Scan Songs on the Songs tab of YARG's Settings, or restart the game.
 
+Songs you already have, from Clone Hero or anywhere else, go in a song folder you add in YARG's
+Settings. The Songs and Folders tutorial in the game explains adding, scanning and removing
+folders, and how that differs from what the launcher does.
+
 ## The tutorials in the game
 
 Once you're in YARG, the mod can teach you the rest. The first time the main menu comes up, it
@@ -63,7 +67,7 @@ the keys.
 ## Getting help
 
 If something doesn't work, or you're stuck, join [this Discord server](https://discord.gg/V8tvAN84Mr)
-and ask in the yargaccess-support channel.
+and ask in the yarg-support channel.
 
 You must attach the mod's log to your message. Without it, it is very difficult to help you.
 
@@ -83,7 +87,7 @@ the game folder, which holds:
 2. Choose Open the logs folder on the launcher's Game tab.
 3. If you haven't started YARG since the problem, send `Latest.log`. If you have, open the `Logs`
    folder and send the file whose date and time match the game where it happened.
-4. In the yargaccess-support channel, attach the file to your message (the plus button next to the
+4. In the yarg-support channel, attach the file to your message (the plus button next to the
    message box, or drag the file in), and say what you were doing and what went wrong.
 
 ## Contributing

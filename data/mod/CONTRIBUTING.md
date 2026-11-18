@@ -22,7 +22,7 @@ author and its history attached.
 In the pull request, say what the change does, why, and how you tested it. Say which screen reader
 you used and what you heard: most of this project is about what gets spoken and played, and a
 change that builds cleanly can still sound wrong. If you aren't sure an idea fits, ask in the
-yargaccess-support channel on [the Discord server](https://discord.gg/V8tvAN84Mr) before you
+yarg-support channel on [the Discord server](https://discord.gg/V8tvAN84Mr) before you
 start.
 
 ## What you need
