@@ -1,0 +1,20 @@
+dist/
+
+# Secrets
+.env
+
+# Logs, local tool and editor settings, OS files
+*.log
+.claude/settings.local.json
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Developer notes and AI session files: kept on the developer's machine, not published
+docs/
+history.md
+CLAUDE.md
+AGENTS.md
+.claude/
