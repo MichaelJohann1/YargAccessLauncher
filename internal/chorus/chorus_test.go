@@ -95,3 +95,21 @@ func TestSearchBodies(t *testing.T) {
 		t.Fatal("name sent without text")
 	}
 }
+
+func TestSearchDropsRepeatedCharts(t *testing.T) {
+	old := postJSON
+	postJSON = func(url string, body any, out any) error {
+		return json.Unmarshal([]byte(`{"found": 3, "data": [
+			{"md5": "a", "name": "One", "packName": "Pack 1"},
+			{"md5": "a", "name": "One", "packName": "Pack 2"},
+			{"md5": "b", "name": "Two"}]}`), out)
+	}
+	t.Cleanup(func() { postJSON = old })
+	res, err := Search(Filters{}, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Charts) != 2 || res.Charts[0].MD5 != "a" || res.Charts[1].MD5 != "b" {
+		t.Fatal(res.Charts)
+	}
+}

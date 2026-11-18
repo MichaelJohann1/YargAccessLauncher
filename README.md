@@ -25,8 +25,8 @@ says the name of each tab as you get there.
   speech files back), reinstall YARG, open the game folder or the logs folder, or uninstall.
 - News: YARG's news articles.
 - DLC: YARG's official setlists and venues. Install, update or delete them here.
-- Download songs through Chorus: search Chorus Encore for charts, hear a preview played with the
-  mod's note sounds, and download a chart into your songs folder.
+- Download songs through Chorus: search or browse Chorus Encore for charts, hear a preview played
+  with the mod's note sounds, and download a chart into your songs folder.
 - Documents: this read me, the changelogs, the contributing guide and the licences.
 - Settings: your folders, which YARG install to manage, the language YARG starts in, where the mod
   is downloaded from, and whether download progress is spoken.

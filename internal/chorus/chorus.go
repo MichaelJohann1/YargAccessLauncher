@@ -463,8 +463,16 @@ func Search(f Filters, page int) (*SearchResult, error) {
 		return nil, err
 	}
 	res := &SearchResult{Found: raw{"f": data.Found}.num("f"), Page: page}
+	// The API sends one row per Drive pack a chart is in, so the same file (same md5) can come
+	// several times on a page. Keep the first.
+	seen := map[string]bool{}
 	for _, d := range data.Data {
-		res.Charts = append(res.Charts, ChartFromAPI(d))
+		c := ChartFromAPI(d)
+		if c.MD5 != "" && seen[c.MD5] {
+			continue
+		}
+		seen[c.MD5] = true
+		res.Charts = append(res.Charts, c)
 	}
 	return res, nil
 }

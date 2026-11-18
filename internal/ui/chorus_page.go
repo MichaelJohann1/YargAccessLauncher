@@ -3,6 +3,7 @@ package ui
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,8 +25,11 @@ const chorusHelp = "Enter on a result downloads it. Play or pause preview plays 
 	"chosen part and difficulty from the chart's preview point, with the song and " +
 	"YargAccess's note sounds made from your YargAccess settings. Preview play style " +
 	"picks Listen and Repeat or Play What You Hear for each chart; it starts on the " +
-	"Play Style saved in the game. The position slider seeks; Escape stops. Five-fret, drums and pro keys have sounds; vocals do not. Search with " +
-	"nothing typed to use the filters alone. Charts come from " +
+	"Play Style saved in the game. The position slider seeks; Escape stops. Five-fret, drums and pro keys have sounds; vocals do not. " +
+	"The newest charts are listed when this tab first opens, so you can browse without searching. " +
+	"Browse all charts clears the search boxes and lists every chart in the chosen sort order, with " +
+	"the instrument and difficulty filters still applied. Type a number in Go to page and press Enter " +
+	"to jump to that page. Charts come from " +
 	"Chorus Encore, enchor.us, a community site. Check each chart's licence before " +
 	"sharing it."
 
@@ -43,6 +47,9 @@ type ChorusPage struct {
 	query     string
 	filters   *chorus.Filters
 	searching bool
+	browsed   bool // the newest charts were loaded when the tab first opened
+
+	pageBox *walk.LineEdit
 
 	searchBox    *walk.LineEdit
 	instrument   *walk.ComboBox
@@ -102,9 +109,10 @@ func newChorusPage(w *MainWindow) *ChorusPage {
 	name(p.charterBox, "Search for charter")
 	p.charterBox.KeyDown().Attach(p.enterSearches)
 	button(r, "&Search", func() { p.Search(1, nil) })
+	button(r, "&Browse all charts", p.browseAll)
 	hspacer(r)
 
-	p.summary = label(tab, "No search yet.")
+	p.summary = label(tab, "Loading the newest charts.")
 
 	label(tab, "Results:")
 	p.list = NewReportList(tab, []Column{{"Song", 220}, {"Artist", 160}, {"Length", 60}, {"Charter", 140},
@@ -117,6 +125,11 @@ func newChorusPage(w *MainWindow) *ChorusPage {
 	button(r, "&Download selected", p.onDownload)
 	button(r, "&Previous page", func() { p.page(-1) })
 	button(r, "&Next page", func() { p.page(1) })
+	label(r, "Go to page:")
+	p.pageBox = must(walk.NewLineEdit(r))
+	p.pageBox.SetMinMaxSize(walk.Size{Width: 70}, walk.Size{Width: 70})
+	name(p.pageBox, "Go to page")
+	p.pageBox.KeyDown().Attach(p.enterGoesToPage)
 	button(r, "Open song &folder", func() { w.OpenFolder(p.songsDir()) })
 	hspacer(r)
 
@@ -163,7 +176,43 @@ func (p *ChorusPage) enterSearches(key walk.Key) {
 
 func (p *ChorusPage) songsDir() string { return p.w.cfg.ResolvedSongsDir() }
 
-func (p *ChorusPage) OnShown() {}
+// OnShown lists the newest charts the first time the tab opens, so there is something to browse
+// before any search. It is quiet: the summary label holds the count, and focus stays where it is.
+func (p *ChorusPage) OnShown() {
+	if p.browsed || p.result != nil {
+		return
+	}
+	p.browsed = true
+	p.run(1, &chorus.Filters{Sort: chorus.Sorts[1]}, true)
+}
+
+// browseAll lists every chart: the search boxes are cleared and the sort, instrument and difficulty
+// choices are kept. Best match means nothing without text, so it becomes Newest first.
+func (p *ChorusPage) browseAll() {
+	p.searchBox.SetText("")
+	p.charterBox.SetText("")
+	if p.sort.CurrentIndex() <= 0 {
+		p.sort.SetCurrentIndex(1)
+	}
+	p.Search(1, nil)
+}
+
+func (p *ChorusPage) enterGoesToPage(key walk.Key) {
+	if key != walk.KeyReturn {
+		return
+	}
+	if p.result == nil {
+		speech.Speak("Search or browse first.", true)
+		return
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(p.pageBox.Text()))
+	last := pageCount(p.result.Found)
+	if err != nil || n < 1 || n > last {
+		speech.Speak(fmt.Sprintf("Type a page number from 1 to %d.", last), true)
+		return
+	}
+	p.Search(n, p.filters)
+}
 
 func pageCount(found int) int {
 	return max(1, (found+chorus.PageSize-1)/chorus.PageSize)
@@ -180,6 +229,11 @@ func (p *ChorusPage) Search(page int, filters *chorus.Filters) {
 			Charter:    strings.TrimSpace(p.charterBox.Text()),
 		}
 	}
+	p.run(page, filters, false)
+}
+
+// run fetches a page. quiet: no speech and no focus change (the list loaded when the tab opens).
+func (p *ChorusPage) run(page int, filters *chorus.Filters, quiet bool) {
 	if p.searching {
 		return
 	}
@@ -195,23 +249,29 @@ func (p *ChorusPage) Search(page int, filters *chorus.Filters) {
 	if p.query == "" {
 		p.query = "these filters"
 	}
-	speech.Speak("Searching.", true)
+	if !quiet {
+		speech.Speak("Searching.", true)
+	}
 	go func() {
 		res, err := chorus.Search(*filters, page)
 		p.w.Synchronize(func() {
 			p.searching = false
 			if err != nil {
+				if quiet {
+					p.summary.SetText("The newest charts could not be loaded. Search or choose Browse all charts to try again.")
+					return
+				}
 				errorBox(p.w, fmt.Sprintf("The Chorus search failed.\n\n%v", err), "Error")
 				return
 			}
-			p.show(res, filters)
+			p.show(res, filters, quiet)
 		})
 	}()
 }
 
 func (p *ChorusPage) page(delta int) {
 	if p.result == nil {
-		speech.Speak("Search first.", true)
+		speech.Speak("Search or browse first.", true)
 		return
 	}
 	n := p.result.Page + delta
@@ -222,7 +282,7 @@ func (p *ChorusPage) page(delta int) {
 	p.Search(n, p.filters)
 }
 
-func (p *ChorusPage) show(res *chorus.SearchResult, filters *chorus.Filters) {
+func (p *ChorusPage) show(res *chorus.SearchResult, filters *chorus.Filters, quiet bool) {
 	p.result = res
 	p.filters = filters
 	p.list.DeleteAll()
@@ -238,11 +298,20 @@ func (p *ChorusPage) show(res *chorus.SearchResult, filters *chorus.Filters) {
 		if res.Found == 1 {
 			word = "chart"
 		}
-		text = fmt.Sprintf("Found %d %s. %d on page %d of %d.", res.Found, word, len(res.Charts), res.Page, pageCount(res.Found))
+		verb := "Found"
+		if filters.Text == "" && filters.Charter == "" {
+			verb = "Browsing"
+		}
+		text = fmt.Sprintf("%s %d %s. %d on page %d of %d.", verb, res.Found, word, len(res.Charts), res.Page, pageCount(res.Found))
 	}
 	p.summary.SetText(text)
-	p.w.announce(text, true)
-	if len(res.Charts) > 0 {
+	p.pageBox.SetText(strconv.Itoa(res.Page))
+	if quiet {
+		p.w.logLine(text)
+	} else {
+		p.w.announce(text, true)
+	}
+	if !quiet && len(res.Charts) > 0 {
 		p.list.FocusRow(0)
 		p.list.SetFocus()
 	}

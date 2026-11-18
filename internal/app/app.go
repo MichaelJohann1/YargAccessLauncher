@@ -3,7 +3,7 @@ package app
 
 // YARG Access launcher: installs YARG, the accessibility mod and music for screen-reader users.
 const (
-	Version   = "0.1.0"
+	Version   = "0.1.1"
 	Name      = "YARG Access"
 	UserAgent = "YARG-Access-Launcher/" + Version
 )
