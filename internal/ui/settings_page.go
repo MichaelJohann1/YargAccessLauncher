@@ -19,6 +19,7 @@ type SettingsPage struct {
 	gameChoice  *walk.ComboBox
 	gameDirs    []string
 	gameDir     *walk.LineEdit
+	language    *walk.ComboBox
 	modRepo     *walk.LineEdit
 	modAsset    *walk.LineEdit
 	modLocal    *walk.LineEdit
@@ -40,6 +41,20 @@ func newSettingsPage(w *MainWindow) *SettingsPage {
 	r.Layout().(*walk.BoxLayout).SetStretchFactor(p.gameChoice, 1)
 	p.fillGames()
 	p.gameDir = p.pathRow("Game folder for this build (empty means a new install in the content folder):", cfg.GameDirSetting(), false)
+
+	r = row(tab)
+	langNames := make([]string, len(config.Languages))
+	for i, l := range config.Languages {
+		langNames[i] = l.Name
+	}
+	p.language = dropDown(r, "YARG language (YargAccess speaks it too):", langNames)
+	r.Layout().(*walk.BoxLayout).SetStretchFactor(p.language, 1)
+	p.language.SetCurrentIndex(0)
+	for i, l := range config.Languages {
+		if l.Code == cfg.Language {
+			p.language.SetCurrentIndex(i)
+		}
+	}
 
 	p.modRepo = p.textRow("Mod GitHub repository (owner/name):", cfg.ModRepo)
 	p.modAsset = p.textRow("Mod release file name pattern:", cfg.ModAssetPattern)
@@ -195,6 +210,10 @@ func (p *SettingsPage) onSave() {
 	cfg.AddSongsDirToYarg = p.addToYarg.Checked()
 	cfg.AnnounceProgress = p.announce.Checked()
 	cfg.ProgressInterval = int(p.interval.Value())
+	cfg.Language = ""
+	if i := p.language.CurrentIndex(); i > 0 && i < len(config.Languages) {
+		cfg.Language = config.Languages[i].Code
+	}
 	w.ConfigChanged()
 	w.announce("Settings saved.", true)
 }

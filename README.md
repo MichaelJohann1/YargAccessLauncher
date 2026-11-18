@@ -27,8 +27,8 @@ says the name of each tab as you get there.
 - Download songs through Chorus: search Chorus Encore for charts, hear a preview played with the
   mod's note sounds, and download a chart into your songs folder.
 - Documents: this read me, the changelogs, the contributing guide and the licences.
-- Settings: your folders, which YARG install to manage, where the mod is downloaded from, and
-  whether download progress is spoken.
+- Settings: your folders, which YARG install to manage, the language YARG starts in, where the mod
+  is downloaded from, and whether download progress is spoken.
 
 Anywhere in the launcher, F1 lists the keys and F2 reads how far a download has got. F3 turns
 spoken progress on or off. Escape cancels a download or stops a preview.
@@ -38,6 +38,41 @@ The launcher keeps its settings and log in `%APPDATA%\YARG Access` (`config.json
 
 YARG has its own updater, and when it replaces the game folder the mod goes with it. Choose Repair
 the accessibility mod on the Game tab to get it back.
+
+## Languages
+
+YARG comes in nine languages: English, Spanish (Spain), French, Italian, Japanese, Korean, Polish,
+and Portuguese (Brazil and Portugal). It has no language setting of its own; it starts in the
+language it is given when it launches. Choose one with YARG language on the launcher's Settings
+tab, choose Save settings, then Play YARG.
+
+The mod speaks the same language as YARG: its menus, help, tutorials, practice and messages are
+translated into each of the nine. Your screen reader speaks the text, so set its voice to one that
+speaks that language.
+
+Some things stay in English or as they are:
+
+- Parts of YARG itself. YARG's own translations leave some screens in English, such as the pause
+  menu (Resume, Restart, Save Replay, Back To Library), the profile settings (Lefty Flip, Note
+  Speed, Instrument Select and the rest) and the preset names. The mod says those names in English
+  too, so what you hear matches the screen. YARG's Korean translation is mostly unfinished, so in
+  Korean most menu and setting names are in English.
+- A few YARG messages that YARG only writes in English, such as "Device added". The mod speaks
+  them in your language, but the screen still shows them in English.
+- Songs, artists, anything a chart's author wrote, and the names of your devices, microphones and
+  controls.
+- Controller buttons (A, B, X, Y, LB, RB, LT, RT, View, Start), letter keys and F keys.
+- Numbers with a decimal point are said with a dot, for example 0.15 seconds.
+
+Grammar has limits too: a name or number dropped into a sentence can't change its ending to fit,
+so a few lines are worded a little stiffly, and in Polish some counts are read as "label: number".
+
+The translations were made with AI and checked the same way, not by native speakers. If a line
+sounds wrong, or something is still in English, tell us on Discord (see Getting help) and say
+which language and what you heard.
+
+YARG also starts in a language from the command line, for example `YARG.exe -lang fr-FR`, and the
+mod follows that too.
 
 ## Get some songs first
 

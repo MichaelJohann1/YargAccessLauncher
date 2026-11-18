@@ -43,6 +43,37 @@ type Config struct {
 	ProgressInterval  int    `json:"progress_interval"`
 	NightlyWarned     bool   `json:"nightly_warned"`
 	AnnounceProgress  bool   `json:"announce_progress"`
+	// Language is the culture code YARG starts in (its -lang argument); empty means English.
+	Language string `json:"language"`
+}
+
+// Language is one of the languages YARG ships (YARG_Data\StreamingAssets\lang\<Code>.json).
+type Language struct {
+	Code string
+	Name string
+}
+
+// Languages lists them in the order the launcher shows them, each named in its own language and in English.
+var Languages = []Language{
+	{"en-US", "English"},
+	{"es-ES", "Español (Spanish, Spain)"},
+	{"fr-FR", "Français (French)"},
+	{"it-IT", "Italiano (Italian)"},
+	{"ja-JP", "日本語 (Japanese)"},
+	{"ko-KR", "한국어 (Korean)"},
+	{"pl-PL", "Polski (Polish)"},
+	{"pt-BR", "Português (Portuguese, Brazil)"},
+	{"pt-PT", "Português (Portuguese, Portugal)"},
+}
+
+// LanguageCode is the -lang value to start YARG with, or "" for English (YARG's default).
+func (c *Config) LanguageCode() string {
+	for _, l := range Languages {
+		if l.Code == c.Language && l.Code != "en-US" {
+			return l.Code
+		}
+	}
+	return ""
 }
 
 func Default() *Config {

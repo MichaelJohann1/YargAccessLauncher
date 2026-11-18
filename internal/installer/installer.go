@@ -930,7 +930,12 @@ func (i *Installer) Launch() error {
 	if !isFile(exe) {
 		return userError("YARG is not installed yet.")
 	}
-	cmd := exec.Command(exe, "-download-location", i.Cfg.ContentRoot)
+	args := []string{"-download-location", i.Cfg.ContentRoot}
+	// YARG reads its language only from -lang; the mod reads the same argument for its own text.
+	if lang := i.Cfg.LanguageCode(); lang != "" {
+		args = append(args, "-lang", lang)
+	}
+	cmd := exec.Command(exe, args...)
 	cmd.Dir = i.GameDir()
 	if err := cmd.Start(); err != nil {
 		return err

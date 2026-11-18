@@ -62,6 +62,43 @@ Two rules for mod code:
   update renames a method, that one patch is skipped and the rest still load.
 - Every spoken line goes through `Speech.Say`, and caught errors go through `ModLog.Warn`, so they
   end up in the log.
+- Every line a player hears or sees goes through `Loc.T` or `Loc.F` (see Translations below).
+
+## Translations
+
+The mod speaks the language YARG was started in: YARG takes it from its `-lang` argument, which
+the launcher passes from its Settings tab, and `src\Core\Loc.cs` reads the same argument. YARG ships
+nine languages, and the mod has a file for each one except English in `src\Lang\<code>.json`, built
+into the DLL.
+
+The English text is the key. Each file maps an English line to its translation:
+
+```json
+{ "Removed folder {0}. Scan Songs to update the library.": "Carpeta {0} quitada. Escanear Canciones para actualizar la biblioteca." }
+```
+
+When you add or change text in the code:
+
+- Use `Loc.T("...")` for a whole line, and `Loc.F("... {0} ...", value)` when values go into it.
+  Write the whole sentence as one string literal (literals joined with `+` are fine), never pieces
+  joined around a value, because word order differs between languages. Use two keys for a
+  singular and a plural (`"{0} song"`, `"{0} songs"`).
+- Keep the logic on English. Never compare text that YARG shows on screen with an English string,
+  because players see it translated. Find a button by its object, its click method or its YARG
+  localization key.
+- When one English word needs two translations, tag one of them: `Loc.T("[key] Delete")`. The tag
+  is never spoken.
+- Then run `tools\extract-strings.ps1`. It rewrites `tools\lang-keys.json`, the list of every key,
+  and names any `Loc` call whose text isn't a literal. Add each new key to all eight language files
+  and run `tools\check-lang.ps1`. It must report 0 missing and 0 placeholder mismatches. A line
+  with no translation is spoken in English and logged as `Loc missing`.
+
+To fix a translation, edit that language's file and run `tools\check-lang.ps1 <code>`. Keep
+`{0}`-style and `{name}`-style placeholders exactly as they are. Use YARG's own words for game terms
+and on-screen names (its translations are in `YARG_Data\StreamingAssets\lang` in the game folder).
+Keep `: ` between the two parts of lines shaped like "keys: what they do". To test, start YARG with
+`-lang <code>` and listen. The current translations were made and checked with AI, so a native
+speaker's corrections are very welcome.
 
 ## Building the launcher
 
@@ -84,6 +121,8 @@ After any of them changes in the mod, run `tools\sync-mod-docs.ps1` and build ag
 | --- | --- |
 | `tools\package-mod.ps1 -Version <version>` | Builds the mod release zip (`Mods\YargAccess.dll`, licences and the speech DLLs) that the launcher installs. Pass the release's version number. Build the mod first. |
 | `tools\restore-install.ps1` | Puts MelonLoader, the `Mods` and `UserLibs` folders, `Loader.cfg` and the speech DLLs back into a YARG install after a game update wiped them. `-Install` is the game folder, `-Donor` a folder with a working MelonLoader 0.7. Players should use the launcher's Repair instead. |
+| `tools\extract-strings.ps1` | Lists every `Loc.T` / `Loc.F` key in `src` into `tools\lang-keys.json`, and names calls whose text isn't a literal. |
+| `tools\check-lang.ps1 [<code>]` | Checks one language file, or all of them, against `tools\lang-keys.json`: missing and unused keys, placeholders that differ, lines still in English. |
 | `launcher\tools\build.ps1` | Tests and builds the launcher and its release zip. |
 | `launcher\tools\sync-mod-docs.ps1` | Copies the mod's read me, changelog, this guide and the licences into the launcher. |
 
