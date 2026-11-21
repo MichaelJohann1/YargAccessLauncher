@@ -204,6 +204,19 @@ func (c *Chart) measureLines() []timed {
 	return out
 }
 
+// setBars puts the song's Measure beat lines on its tempo map (TempoMap.Bars), for Listen and Repeat.
+func (c *Chart) setBars() {
+	if c.Tempo == nil {
+		return
+	}
+	c.Tempo.Bars = c.Tempo.Bars[:0]
+	for _, m := range c.measureLines() {
+		if n := len(c.Tempo.Bars); n == 0 || m.tick > c.Tempo.Bars[n-1] {
+			c.Tempo.Bars = append(c.Tempo.Bars, m.tick)
+		}
+	}
+}
+
 // padCount is a note's tick and its number of pads (YARG's note and its child notes).
 type padCount struct{ tick, pads int }
 

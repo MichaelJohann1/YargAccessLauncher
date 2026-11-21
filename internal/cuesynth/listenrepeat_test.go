@@ -22,17 +22,20 @@ func eighthsChart() string {
 	return b.String()
 }
 
-// checkCalls checks what the mod promises about a cut part: each call is its note shifted by the
-// smallest whole number of beats covering the group plus one beat, no call overlaps any answer, and
+// checkCalls checks what the mod promises about a cut part: each listen and answer starts on a bar
+// line, each call is its note moved back by the listen's length, no call overlaps any answer, and
 // groups come in call order.
 func checkCalls(t *testing.T, c *Calls, tempo *chartfile.TempoMap, ticks []int, calls []*Call) {
 	t.Helper()
-	res := tempo.Resolution
+	onBar := map[int]bool{}
+	for _, b := range barTicks(tempo, 0, ticks[len(ticks)-1], 20) {
+		onBar[b] = true
+	}
 	for i, call := range calls {
 		g := call.Group
 		shift := g.StartTick - g.CallStartTick
-		if shift <= 0 || shift%res != 0 {
-			t.Fatalf("note %d: shift %d ticks is not whole beats", i, shift)
+		if shift <= 0 || !onBar[g.StartTick] || !onBar[g.CallStartTick] {
+			t.Fatalf("note %d: listen at tick %d or answer at %d is not on a bar line", i, g.CallStartTick, g.StartTick)
 		}
 		if math.Abs(call.Time-tempo.Time(ticks[i]-shift)) > 1e-9 {
 			t.Fatalf("note %d: call at %v, want %v", i, call.Time, tempo.Time(ticks[i]-shift))
@@ -42,11 +45,11 @@ func checkCalls(t *testing.T, c *Calls, tempo *chartfile.TempoMap, ticks []int, 
 		if i > 0 && g.CallStart < c.Groups[i-1].CallStart {
 			t.Fatal("groups out of call order")
 		}
-		if g.CallEnd >= g.Start {
+		if g.CallEnd > g.Start {
 			t.Fatalf("group %d: call ends at %v, after its answer starts at %v", i, g.CallEnd, g.Start)
 		}
 		for j, h := range c.Groups {
-			if g.CallStart <= h.End && h.Start <= g.CallEnd {
+			if g.CallStart < h.End && h.Start < g.CallEnd {
 				t.Fatalf("call %d (%v..%v) overlaps answer %d (%v..%v)", i, g.CallStart, g.CallEnd, j, h.Start, h.End)
 			}
 		}
@@ -56,10 +59,10 @@ func checkCalls(t *testing.T, c *Calls, tempo *chartfile.TempoMap, ticks []int, 
 func TestListenRepeatPlan(t *testing.T) {
 	ch := chartfile.ReadChart(eighthsChart(), map[string]string{})
 	notes := ch.Notes("guitar", "expert")
-	kept, c := CutNotes(notes, ch.Tempo, 4)
-	// Four eighths span 1.5 beats: the call is 3 beats (1.5 s) early. The next call may start only half
-	// a beat after the answer ends, so every tenth note starts a group: 0, 10, 20.
-	if len(c.Groups) != 3 || len(kept) != 12 || c.Kept != 12 || c.Total != 24 {
+	kept, c := CutNotes(notes, ch.Tempo, 2)
+	// Two-bar windows: the notes start in bar 1, which is in the first listen (bars 0 and 1) and taken
+	// out; the answer is bars 2 and 3 (16 notes), its call two bars (4 s) earlier.
+	if len(c.Groups) != 1 || len(kept) != 16 || c.Kept != 16 || c.Total != 24 {
 		t.Fatalf("%d groups, %d kept", len(c.Groups), len(kept))
 	}
 	var ticks []int
@@ -70,7 +73,7 @@ func TestListenRepeatPlan(t *testing.T) {
 	}
 	checkCalls(t, c, ch.Tempo, ticks, calls)
 	for i, n := range kept {
-		if !near(n.Time-c.Of(n).Time, 1.5) {
+		if !near(n.Time-c.Of(n).Time, 4) {
 			t.Fatalf("note %d: call %v before its hit", i, n.Time-c.Of(n).Time)
 		}
 	}
@@ -92,16 +95,16 @@ func TestListenRepeatPlan(t *testing.T) {
 			t.Fatal("a riser in Listen and Repeat")
 		}
 	}
-	if len(strikes) != 12 || len(clicks) != 12 {
+	if len(strikes) != 16 || len(clicks) != 16 {
 		t.Fatalf("%d strikes, %d clicks", len(strikes), len(clicks))
 	}
 	for i, n := range kept {
-		if strikes[i] != round3(n.Time-1.5) || clicks[i] != round3(n.Time) {
+		if strikes[i] != round3(n.Time-4) || clicks[i] != round3(n.Time) {
 			t.Fatalf("note %d: strike %v click %v, hit %v", i, strikes[i], clicks[i], n.Time)
 		}
 	}
 	sw := c.Swells(s, bank)
-	if len(sw) != 6 || !near(sw[0].Start+SwellLength, c.Groups[0].CallStart) || !near(sw[1].Start+SwellLength, c.Groups[0].Start) ||
+	if len(sw) != 2 || !near(sw[0].Start+SwellLength, c.Groups[0].CallStart) || !near(sw[1].Start+SwellLength, c.Groups[0].Start) ||
 		sw[0].Sound != bank.Listen || sw[1].Sound != bank.YourTurn {
 		t.Fatalf("swells %v", sw)
 	}
@@ -122,19 +125,22 @@ func TestListenRepeatPlan(t *testing.T) {
 func TestListenRepeatStarPowerMoves(t *testing.T) {
 	ch := chartfile.ReadChart(eighthsChart(), map[string]string{})
 	notes := ch.Notes("guitar", "expert")
-	// A phrase over notes 4..12: its first kept note is 10.
+	// A phrase over notes 4..12: notes 0..7 (bar 1) are taken out, so its first kept note is 8.
 	for i := 4; i <= 12; i++ {
 		notes[i].Star = true
 	}
 	notes[4].StarStart = true
-	kept, _ := CutNotes(notes, ch.Tempo, 4)
+	kept, _ := CutNotes(notes, ch.Tempo, 2)
+	if len(kept) == 0 {
+		t.Fatal("nothing kept")
+	}
 	for _, n := range kept {
-		want := n.Tick == notes[10].Tick
+		want := n.Tick == notes[8].Tick
 		if n.StarStart != want {
 			t.Fatalf("tick %d: star start %v", n.Tick, n.StarStart)
 		}
 	}
-	if notes[10].StarStart || !notes[4].StarStart {
+	if notes[8].StarStart || !notes[4].StarStart {
 		t.Fatal("the chart's own notes changed")
 	}
 }
@@ -151,7 +157,7 @@ func TestListenRepeatDrumsAndKeys(t *testing.T) {
 	}
 	s := DefaultSettings()
 	bank := NewBank(9, true, s.DrumLookAhead, true)
-	kd, cd := CutDrums(drums, ch.Tempo, 4)
+	kd, cd := CutDrums(drums, ch.Tempo, 2)
 	kicks := 0
 	for _, p := range ScheduleDrums(kd, chartfile.PRO, s, bank, cd, nil, nil) {
 		if p.Looped || p.Sound == bank.Repeat || p.Sound == bank.Riser || p.Sound == bank.Click {
@@ -161,13 +167,13 @@ func TestListenRepeatDrumsAndKeys(t *testing.T) {
 			kicks++
 		}
 	}
-	if kicks != len(kd) || len(kd) != 12 {
+	if kicks != len(kd) || len(kd) != 16 {
 		t.Fatalf("%d kicks for %d notes", kicks, len(kd))
 	}
 
 	kb := NewKeyBank()
 	kbank := NewBank(9, true, s.LookAhead, false)
-	kk, ck := CutKeys(keys, ch.Tempo, 4)
+	kk, ck := CutKeys(keys, ch.Tempo, 2)
 	strikes, clicks := 0, 0
 	for _, p := range ScheduleProkeys(kk, s, kbank, kb, ck, nil) {
 		switch p.Sound {
@@ -180,7 +186,7 @@ func TestListenRepeatDrumsAndKeys(t *testing.T) {
 		}
 	}
 	// Glissando notes in a call play as plain notes.
-	if strikes != 12 || clicks != 12 {
+	if strikes != 16 || clicks != 16 {
 		t.Fatalf("%d strikes, %d clicks", strikes, clicks)
 	}
 }
@@ -267,13 +273,13 @@ func checkNoSoundInAnswers(t *testing.T, plays []*Play, c *Calls, bank *Bank) {
 
 func TestListenRepeatProkeysHold(t *testing.T) {
 	ch := chartfile.ReadChart(eighthsChart(), map[string]string{})
-	// One held key, a beat (192 ticks, 0.5 s) long: the call is 3 beats early, its tone stops a
-	// quarter beat before the end, shifted back with the call.
-	n := &chartfile.KeyNote{Tick: 768, Keys: []int{12}, EndTicks: []int{960}}
-	n.Time, n.End = ch.Tempo.Time(768), ch.Tempo.Time(960)
-	n.Safe = ch.Tempo.Time(960 - 48)
+	// One held key in bar 2, a beat (192 ticks, 0.5 s) long: with two-bar windows the call is two bars
+	// early, its tone stops a quarter beat before the end, shifted back with the call.
+	n := &chartfile.KeyNote{Tick: 1536, Keys: []int{12}, EndTicks: []int{1728}}
+	n.Time, n.End = ch.Tempo.Time(1536), ch.Tempo.Time(1728)
+	n.Safe = ch.Tempo.Time(1728 - 48)
 	n.Safes = []float64{n.Safe}
-	kept, c := CutKeys([]*chartfile.KeyNote{n}, ch.Tempo, 4)
+	kept, c := CutKeys([]*chartfile.KeyNote{n}, ch.Tempo, 2)
 	if len(kept) != 1 {
 		t.Fatalf("%d kept", len(kept))
 	}

@@ -83,7 +83,7 @@ songs through Chorus tab finds single charts made by the community. If YARG was 
 downloaded, choose Scan Songs on the Songs tab of YARG's Settings, or restart the game.
 
 Songs you already have, from Clone Hero or anywhere else, go in a song folder you add in YARG's
-Settings. The Songs and Folders tutorial in the game explains adding, scanning and removing
+Settings. The Getting Started tutorial in the game explains adding, scanning and removing
 folders, and how that differs from what the launcher does.
 
 ## The tutorials in the game
@@ -92,9 +92,11 @@ Once you're in YARG, the mod can teach you the rest. The first time the main men
 asks whether you want the tutorials. You can open them later from Tutorials on the main menu,
 just below Practice.
 
-They cover how the mod works, how these games work, each instrument, the play styles, scoring,
-star power, practice mode and replays. Each instrument tutorial ends with a practice: you hear
-every kind of note, then play it back on your own controller. The same list has a Sound Glossary,
+Getting Started comes first: how the mod works, getting songs, profiles, how these games work,
+the play styles and the song library. Then a Settings tutorial covers the mod's own tab in YARG's
+Settings, and the rest cover each instrument, difficulties, scoring, star power, replays and
+practice mode. Each instrument tutorial ends with a practice: you hear every kind of note, then
+play it back on your own controller. The same list has a Sound Glossary,
 where you can hear every sound the mod makes, and Practice The Buttons. In any menu, F1 tells you
 the keys.
 

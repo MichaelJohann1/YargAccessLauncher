@@ -308,6 +308,7 @@ func ReadMidi(data []byte, ini map[string]string) (*Chart, error) {
 		}
 	}
 	chart.generateFills()
+	chart.setBars()
 	chart.Key = detectKey(byName, tempo)
 	return chart, nil
 }

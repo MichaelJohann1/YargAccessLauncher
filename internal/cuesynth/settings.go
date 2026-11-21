@@ -14,14 +14,14 @@ type Settings struct {
 	CueRepeats    bool
 	BeatTicks     bool
 	ListenRepeat  bool    // Play Style: Listen and Repeat (false: Play What You Hear)
-	CallLength    int     // Listen and Repeat: notes in each group, 2, 4 or 8
+	CallLength    int     // Listen and Repeat: bars in each pattern, 1, 2 or 4
 	Master        float64 // 0..1
 	Volumes       map[string]float64
 }
 
 // DefaultSettings is the mod's defaults.
 func DefaultSettings() *Settings {
-	return &Settings{LookAhead: 0.3, DrumLookAhead: 0.2, BeatTicks: true, ListenRepeat: true, CallLength: 4,
+	return &Settings{LookAhead: 0.3, DrumLookAhead: 0.2, BeatTicks: true, ListenRepeat: true, CallLength: 2,
 		Master: 1.0, Volumes: map[string]float64{}}
 }
 
@@ -93,15 +93,20 @@ func ReadSettings(gameDir string) *Settings {
 	s.CueRepeats = strings.ToLower(get("CueRepeats", "false")) == "true"
 	s.BeatTicks = strings.ToLower(get("BeatTicks", "true")) == "true"
 	// ModSettings: PlayMode is "repeat" or "hear" (anything else is put back to "repeat"); CallLength
-	// is "2", "4" or "8" (anything else is put back to "4").
+	// is "1", "2" or "4" (anything else is put back to "2"). A value saved before CallLengthBars was
+	// set counted notes, and the mod resets it to 2 at its next start.
 	s.ListenRepeat = get("PlayMode", "repeat") != "hear"
-	switch get("CallLength", "4") {
-	case "2":
-		s.CallLength = 2
-	case "8":
-		s.CallLength = 8
-	default:
+	length := get("CallLength", "2")
+	if strings.ToLower(get("CallLengthBars", "false")) != "true" {
+		length = "2"
+	}
+	switch length {
+	case "1":
+		s.CallLength = 1
+	case "4":
 		s.CallLength = 4
+	default:
+		s.CallLength = 2
 	}
 	s.Master = clamp(num("CueVolume", 100))
 	for _, k := range order {

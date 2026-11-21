@@ -1,5 +1,9 @@
 # Changelog
 
+11/20/2026 (0.1.2):
+
+- The song preview's Listen and Repeat now matches YargAccess 0.1.1: patterns are whole bars that start on a bar line, and Call Length is 1, 2 or 4 bars, 2 by default.
+
 11/18/2026 (0.1.1):
 
 - The Download songs through Chorus tab lists the newest charts when it first opens, so you can browse without searching. Browse all charts clears the search boxes and lists every chart in the chosen order, and Go to page jumps to a page number.

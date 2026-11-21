@@ -7,10 +7,11 @@ import (
 	"github.com/MichaelJohann1/YargAccessLauncher/internal/chartfile"
 )
 
-// Listen and Repeat, as the mod's Gameplay/ListenRepeat.cs: the chart's notes are split into groups.
-// Each group's notes play as a call, shifted earlier by whole beats so the rhythm is the song's, and
-// the notes that fall where the call plays are taken out of the chart. The player then plays the
-// group back at its real time (the answer).
+// Listen and Repeat, as the mod's Gameplay/ListenRepeat.cs: the chart is split into windows of Call
+// Length bars (1, 2 or 4). The notes of one window play as a call in the window before it, whole bars
+// earlier so the rhythm is the song's, and the chart's notes in that listen window are taken out. The
+// player then plays the window back at its real time (the answer). Listen and answer both start on a
+// bar line.
 
 // SwellLength is the listen and your-turn swells' length: each ends where its call or answer starts.
 const SwellLength = 0.4
@@ -31,7 +32,7 @@ type Call struct {
 // A nil *Calls is Play What You Hear: no note has a call.
 type Calls struct {
 	Groups      []*Group
-	Size        int // the Call Length the part was cut with
+	Size        int // the Call Length the part was cut with, in bars
 	Kept, Total int // notes kept of the part's notes
 	marks       map[any]*Call
 }
@@ -44,59 +45,121 @@ func (c *Calls) Of(note any) *Call {
 	return c.marks[note]
 }
 
-// plan is ListenRepeat.Plan: groups up to size notes (a group also ends at a gap over a bar or a span
-// over two bars), shifts each by the smallest whole number of beats covering the group plus one beat,
-// and skips a group whose call would start before the song or less than half a beat after the answer
-// before it ends. It returns each grouped note's call, nil for a note taken out or a fixed one.
-// ends are the notes' end ticks (their longest sustain). Fixed notes (big rock endings) are never
-// grouped or taken out, and a group stops at one.
+// plan is ListenRepeat.PlanBars: the answer is `size` whole bars starting on a bar line, the listen is
+// the `size` bars before it, and each answer note's call is the note moved back by the listen's length
+// in ticks. The chart's notes in the listen bars are taken out, and the next listen starts after the
+// answer (or where the notes come back after a rest). A note whose call would not fit in a shorter
+// listen bar (a time signature change) is taken out. It returns each grouped note's call, nil for a
+// note taken out or a fixed one. ends are the notes' end ticks (their longest sustain). Fixed notes
+// (big rock endings) are never grouped or taken out.
 func plan(ticks, ends []int, times []float64, fixed []bool, tempo *chartfile.TempoMap, size int) ([]*Call, []*Group) {
 	n := len(ticks)
-	res := tempo.Resolution
 	marks := make([]*Call, n)
 	var groups []*Group
-	prevEnd, havePrev := 0, false
+	if n == 0 || size <= 0 {
+		return marks, groups
+	}
+	last := 0
+	for i := range ticks {
+		last = max(last, ticks[i], ends[i])
+	}
+	bars := barTicks(tempo, ticks[0], last, 2*size+2)
+	minAnswer := size
 	for k := 0; k < n; {
 		if fixed[k] {
 			k++
 			continue
 		}
-		members := []int{k}
-		j := k + 1
-		for j < n && len(members) < size && !fixed[j] {
-			if ticks[j]-ticks[j-1] > 4*res || ticks[j]-ticks[k] > 8*res {
-				break
-			}
-			members = append(members, j)
+		s := max(barOf(bars, ticks[k]), minAnswer)
+		if s+size >= len(bars) {
+			break
+		}
+		callStart, start, end := bars[s-size], bars[s], bars[s+size]
+		shift := start - callStart
+		j := k
+		for j < n && ticks[j] < start {
 			j++
 		}
-		first := ticks[k]
-		lastEnd := first
-		for _, m := range members {
-			lastEnd = max(lastEnd, min(ends[m], ticks[m]+res))
+		var members []int
+		realEnd := end - 1
+		for ; j < n && ticks[j] < end; j++ {
+			if fixed[j] || ticks[j]-shift >= start {
+				continue
+			}
+			members = append(members, j)
+			realEnd = max(realEnd, ends[j])
 		}
-		beats := int(math.Ceil((float64(lastEnd-first) + float64(res)) / float64(res)))
-		shift := beats * res
-		callStart := first - shift
-		if callStart < 0 || havePrev && callStart < prevEnd+res/2 {
-			k++
+		// The next listen starts on the first bar line after the answer, or after a held note that runs
+		// past it.
+		minAnswer = barOf(bars, realEnd) + 1 + size
+		k = j
+		if len(members) == 0 {
 			continue
 		}
-		g := &Group{CallStartTick: callStart, StartTick: first, CallStart: tempo.Time(callStart),
-			CallEnd: tempo.Time(lastEnd - shift), Start: times[k]}
-		realEnd := first
+		g := &Group{CallStartTick: callStart, StartTick: start, EndTick: realEnd,
+			CallStart: tempo.Time(callStart), CallEnd: tempo.Time(start), Start: tempo.Time(start), End: tempo.Time(realEnd)}
 		for _, m := range members {
-			realEnd = max(realEnd, ends[m])
 			marks[m] = &Call{Time: tempo.Time(ticks[m] - shift), Group: g}
 		}
-		g.EndTick = realEnd
-		g.End = tempo.Time(realEnd)
 		groups = append(groups, g)
-		prevEnd, havePrev = realEnd, true
-		k = j
 	}
 	sort.SliceStable(groups, func(a, b int) bool { return groups[a].CallStart < groups[b].CallStart })
 	return marks, groups
+}
+
+// barTicks is ListenRepeat.BarTicks: the bar lines from before the first note to `extra` bars past the
+// last tick (the chart's Measure lines, else bars from its time signatures; past the end the last bar's
+// length repeated).
+func barTicks(tempo *chartfile.TempoMap, first, last, extra int) []int {
+	res := tempo.Resolution
+	if res <= 0 {
+		res = 480
+	}
+	bars := append([]int(nil), tempo.Bars...)
+	if len(bars) < 2 {
+		bars = bars[:0]
+		sigs := tempo.Signatures
+		for i, s := range sigs {
+			l := barLength(s.Num, s.Den, res)
+			stop := last + 1
+			if i+1 < len(sigs) {
+				stop = sigs[i+1].Tick
+			}
+			for t := s.Tick; t < stop; t += l {
+				if len(bars) == 0 || t > bars[len(bars)-1] {
+					bars = append(bars, t)
+				}
+			}
+		}
+		if len(bars) == 0 {
+			bars = append(bars, 0)
+		}
+		if len(bars) < 2 {
+			bars = append(bars, bars[0]+4*res)
+		}
+	}
+	for bars[0] > first {
+		l := bars[1] - bars[0]
+		bars = append([]int{max(0, bars[0]-l)}, bars...)
+	}
+	lastLen := bars[len(bars)-1] - bars[len(bars)-2]
+	lastBar := barOf(bars, last)
+	for len(bars) <= lastBar+extra+1 {
+		bars = append(bars, bars[len(bars)-1]+lastLen)
+	}
+	return bars
+}
+
+func barLength(num, den, res int) int {
+	if num <= 0 || den <= 0 {
+		return 4 * res
+	}
+	return max(1, int(math.Round(4*float64(res)*float64(num)/float64(den))))
+}
+
+// barOf is the bar a tick falls in: the last bar line at or before it.
+func barOf(bars []int, tick int) int {
+	return max(0, sort.Search(len(bars), func(i int) bool { return bars[i] > tick })-1)
 }
 
 // flags is a note's star power and activator flags.

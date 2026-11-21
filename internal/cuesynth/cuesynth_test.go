@@ -91,19 +91,19 @@ func TestReadSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg := "[Other]\nLookAheadMs = \"999\"\n[YargAccess]\nLookAheadMs = \"400\"\nCueRepeats = true\n" +
-		"PlayMode = \"hear\"\nCallLength = \"8\"\nCueVolume = 50.0\nVolume_green = 20.0\n"
+		"PlayMode = \"hear\"\nCallLength = \"1\"\nCallLengthBars = true\nCueVolume = 50.0\nVolume_green = 20.0\n"
 	if err := os.WriteFile(filepath.Join(ud, "MelonPreferences.cfg"), []byte(cfg), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	s := ReadSettings(dir)
-	if s.LookAhead != 0.4 || !s.CueRepeats || s.ListenRepeat || s.CallLength != 8 {
+	if s.LookAhead != 0.4 || !s.CueRepeats || s.ListenRepeat || s.CallLength != 1 {
 		t.Fatalf("%+v", s)
 	}
 	if s.Master != 0.5 || s.Volume("green") != 0.2 || s.Volume("red") != 1.0 {
 		t.Fatalf("%+v", s)
 	}
 	d := ReadSettings(filepath.Join(dir, "missing"))
-	if d.LookAhead != 0.3 || d.CueRepeats || !d.ListenRepeat || d.CallLength != 4 {
+	if d.LookAhead != 0.3 || d.CueRepeats || !d.ListenRepeat || d.CallLength != 2 {
 		t.Fatalf("%+v", d)
 	}
 }

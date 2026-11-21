@@ -149,9 +149,11 @@ type TempoMap struct {
 	Resolution int
 	Tempos     []Tempo
 	Signatures []Signature
-	ticks      []int
-	secs       []float64
-	sigTicks   []int
+	// Bars is the tick of each bar line (the song's Measure beat lines), set when a chart is read.
+	Bars     []int
+	ticks    []int
+	secs     []float64
+	sigTicks []int
 }
 
 // Finish sorts the changes, adds 120 BPM and 4/4 at tick 0 when missing, and builds the lookup.
@@ -646,6 +648,7 @@ func ReadChart(text string, ini map[string]string) *Chart {
 		chart.splitFills(fills)
 		chart.generateFills()
 	}
+	chart.setBars()
 	return chart
 }
 
