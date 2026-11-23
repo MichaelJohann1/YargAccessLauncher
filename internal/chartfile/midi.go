@@ -54,8 +54,8 @@ func vlq(data []byte, pos int) (int, int) {
 	}
 }
 
-// midiTracks reads a MIDI file: its division and tracks. A read past the end of the data (Python
-// raises IndexError / struct.error there) is reported as a damaged notes.mid.
+// midiTracks reads a MIDI file: its division and tracks. A read past the end of the data is
+// reported as a damaged notes.mid.
 func midiTracks(data []byte) (division int, tracks []midiTrack, err error) {
 	if len(data) < 4 || !bytes.Equal(data[:4], []byte("MThd")) {
 		return 0, nil, &ChartError{"notes.mid is not a MIDI file."}
@@ -196,7 +196,7 @@ func ReadMidi(data []byte, ini map[string]string) (*Chart, error) {
 		return nil, err
 	}
 	if division == 0 {
-		// Python divides by zero here (ZeroDivisionError).
+		// Tick times would divide by zero.
 		return nil, &ChartError{"notes.mid has no ticks per beat."}
 	}
 	tempo := &TempoMap{Resolution: division}

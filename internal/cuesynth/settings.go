@@ -93,8 +93,8 @@ func ReadSettings(gameDir string) *Settings {
 	s.CueRepeats = strings.ToLower(get("CueRepeats", "false")) == "true"
 	s.BeatTicks = strings.ToLower(get("BeatTicks", "true")) == "true"
 	// ModSettings: PlayMode is "repeat" or "hear" (anything else is put back to "repeat"); CallLength
-	// is "1", "2" or "4" (anything else is put back to "2"). A value saved before CallLengthBars was
-	// set counted notes, and the mod resets it to 2 at its next start.
+	// is "1", "2" or "4" (anything else is put back to "2"). Without CallLengthBars the saved value
+	// counts notes, not bars, and the mod resets it to 2.
 	s.ListenRepeat = get("PlayMode", "repeat") != "hear"
 	length := get("CallLength", "2")
 	if strings.ToLower(get("CallLengthBars", "false")) != "true" {

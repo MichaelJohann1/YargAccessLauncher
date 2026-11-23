@@ -5,8 +5,8 @@
 // Python launcher's cuesynth.py. Change those and this together.
 //
 // Only the sounds a player hears before pressing anything are made: the note and pad sounds, held
-// tones, the chord marker, the hit bar riser or click, the Let go chimes, the drums' "same again"
-// tick, the star power phrase start and sparkle, the Listen and Repeat swells, and the beat ticks.
+// tones, the chord marker, the hit bar riser or click, the Let go chimes,
+// the star power phrase start and sparkle, the Listen and Repeat swells, and the beat ticks.
 // Hit, miss and star power level sounds depend on the playing, so the preview has none.
 //
 // CueTrack mixes them into a stereo float stream at 44100 Hz, a chunk at a time. Pans follow BASS for

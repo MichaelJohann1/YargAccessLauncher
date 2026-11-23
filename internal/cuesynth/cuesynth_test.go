@@ -223,7 +223,7 @@ func TestChartDrumsAndSounds(t *testing.T) {
 	}
 }
 
-// Every drum note plays its own pads (user, 2026-11-14): a repeating rhythm has no held tones, no
+// Every drum note plays its own pads: a repeating rhythm has no held tones, no
 // "same again" tick, no hit bar riser or click.
 func TestDrumRepeatsPlayEveryNote(t *testing.T) {
 	H := chartfile.NewDrumHit

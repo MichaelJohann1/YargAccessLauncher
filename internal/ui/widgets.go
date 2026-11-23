@@ -92,7 +92,7 @@ func nameChild(parent walk.Window, class, text string) {
 
 // enterActivates makes Enter click the focused push button in form. The dialog manager sends a
 // button's click to the form, and walk finds the button only among the form's direct children, so
-// Enter did nothing on buttons inside rows. On anything else Enter goes to the focused control, or in
+// Enter would do nothing on buttons inside rows. On anything else Enter goes to the focused control, or in
 // a dialog to its default button.
 func enterActivates(form interface{ ShortcutActions() *walk.ActionList }, defaultButton func() *walk.PushButton) {
 	a := walk.NewAction()
@@ -127,7 +127,7 @@ func className(h win.HWND) string {
 }
 
 // tabStripFirst puts a TabWidget's tab strip before its pages in the Tab order, as in a native
-// property sheet: walk creates the pages above it in z-order, which made Tab skip from the strip
+// property sheet. walk creates the pages above it in z-order, which makes Tab skip from the strip
 // past the page.
 func tabStripFirst(tw *walk.TabWidget) {
 	h := findChild(tw.Handle(), "SysTabControl32")

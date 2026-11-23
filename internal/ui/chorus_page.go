@@ -293,7 +293,7 @@ func (p *ChorusPage) show(res *chorus.SearchResult, filters *chorus.Filters, qui
 	if res.Found == 0 {
 		text = fmt.Sprintf("No charts found for %s.", p.query)
 	} else {
-		// The search's total, then the charts loaded on this page (user, 2026-11-17).
+		// The search's total, then the charts loaded on this page.
 		word := "charts"
 		if res.Found == 1 {
 			word = "chart"

@@ -1,7 +1,7 @@
 package cuesynth
 
 // pyRandom is Python's random.Random: MT19937 seeded the way CPython seeds it from an int, so the
-// noise here is sample for sample the noise the Python launcher (and its tests) made.
+// noise matches the Python cuesynth.py sample for sample.
 type pyRandom struct {
 	mt  [624]uint32
 	idx int

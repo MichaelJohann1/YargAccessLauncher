@@ -10,9 +10,9 @@ import (
 // Drum timing constants shared with the mod's DrumSound.
 const (
 	DrumMinGap    = 0.044 // notes closer than this sound once
-	DrumRepeatGap = 0.6   // a same-pads note within this plays the "same again" tick
-	DrumMaxPeriod = 4     // the longest repeating pattern a run looks for
-	DrumMinRun    = 3     // the fewest notes a run holds for
+	DrumRepeatGap = 0.6   // a same-pads note within this counts as a repeat
+	DrumMaxPeriod = 4     // the longest repeating pattern drumRuns looks for
+	DrumMinRun    = 3     // the fewest notes drumRuns counts as a run
 )
 
 // drumIDs is every pad cue id; a note's pads are a bit set over it.
@@ -160,9 +160,8 @@ func drumRuns(events []*drumEvent) {
 //     sounds only when it adds a pad (a flam), and then plays all its pads;
 //   - a ghost note's pad plays softly with a whisper, an accent's loudly with a sharp crack, the
 //     whisper or crack at the pad's time and pan;
-//   - with Cue Repeated Notes off, a same-pads note within 0.6 s plays the "same again" tick, and a
-//     repeating pattern plays once, then its pads hold their tones through the run (no hit bar sound
-//     on drums);
+//   - every note plays its own pads, repeats included, whatever Cue Repeated Notes is (no hit bar
+//     sound on drums);
 //   - a roll or swell lane plays one looping sound per pad, struck 12 times a second (a swell's two
 //     pads in turn), from a Look-ahead before the lane to its last note; the lane's own notes have no
 //     cues;
@@ -174,7 +173,7 @@ func drumRuns(events []*drumEvent) {
 // start chimes).
 //
 // With calls (Listen and Repeat, from CutDrums) each note's pads play at its call: every note sounds
-// (no "same again" tick, no runs), lane notes play as plain notes, and the answer has no sounds.
+// lane notes play as plain notes, and the answer has no sounds.
 func ScheduleDrums(notes []*chartfile.DrumNote, mode string, settings *Settings, bank *Bank, calls *Calls,
 	fills []chartfile.Phrase, sim *StarSim) []*Play {
 	lead := settings.DrumLookAhead
@@ -241,7 +240,7 @@ func ScheduleDrums(notes []*chartfile.DrumNote, mode string, settings *Settings,
 	if lane != nil {
 		lanes = append(lanes, lane)
 	}
-	// Every drum note plays its own pads (user, 2026-11-14): no held runs, no "same again" tick.
+	// Every drum note plays its own pads: no held runs, no "same again" tick.
 	for _, e := range events {
 		e.cue = e.note.Time - lead
 		if e.call != nil {
