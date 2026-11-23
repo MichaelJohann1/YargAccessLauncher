@@ -160,8 +160,8 @@ func TestListenRepeatDrumsAndKeys(t *testing.T) {
 	kd, cd := CutDrums(drums, ch.Tempo, 2)
 	kicks := 0
 	for _, p := range ScheduleDrums(kd, chartfile.PRO, s, bank, cd, nil, nil) {
-		if p.Looped || p.Sound == bank.Repeat || p.Sound == bank.Riser || p.Sound == bank.Click {
-			t.Fatal("a run, repeat tick or hit bar sound in drum calls")
+		if p.Looped || p.Sound == bank.Riser || p.Sound == bank.Click {
+			t.Fatal("a held or hit bar sound in drum calls")
 		}
 		if p.Sound == bank.Pads["kick"] {
 			kicks++

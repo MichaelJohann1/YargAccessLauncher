@@ -1,19 +1,13 @@
 package cuesynth
 
 import (
-	"math"
 	"sort"
 
 	"github.com/MichaelJohann1/YargAccessLauncher/internal/chartfile"
 )
 
-// Drum timing constants shared with the mod's DrumSound.
-const (
-	DrumMinGap    = 0.044 // notes closer than this sound once
-	DrumRepeatGap = 0.6   // a same-pads note within this counts as a repeat
-	DrumMaxPeriod = 4     // the longest repeating pattern drumRuns looks for
-	DrumMinRun    = 3     // the fewest notes drumRuns counts as a run
-)
+// DrumMinGap matches the mod's DrumSound: notes closer than this sound once.
+const DrumMinGap = 0.044
 
 // drumIDs is every pad cue id; a note's pads are a bit set over it.
 var drumIDs = []string{"kick", "padred", "padyellow", "padblue", "padgreen", "padgreen5",
@@ -85,11 +79,6 @@ type drumEvent struct {
 	note      *chartfile.DrumNote
 	sounds    []drumSnd
 	mask      uint16
-	gap       float64
-	repeat    bool
-	inRun     bool
-	hold      []drumHold
-	holdStop  float64
 	call      *Call
 	activator bool
 	cue       float64
@@ -101,58 +90,6 @@ type drumLane struct {
 	start, end float64
 	swell      bool
 	pads       []drumHold
-}
-
-// drumRuns is DrumSound.FindRuns: from each note, the pattern of 1 to DrumMaxPeriod notes that repeats
-// longest with no gap over DrumRepeatGap (the shortest wins a tie). A long enough run holds.
-func drumRuns(events []*drumEvent) {
-	for i := 0; i < len(events); {
-		bestLen, bestP := 1, 0
-		for p := 1; p <= DrumMaxPeriod; p++ {
-			j := i + 1
-			for j < len(events) && events[j].gap < DrumRepeatGap && (j < i+p || events[j].mask == events[j-p].mask) {
-				j++
-			}
-			length := j - i
-			oneNote := false
-			if p > 1 {
-				oneNote = true
-				for k := i + 1; k < min(i+p, len(events)); k++ {
-					if events[k].mask != events[i].mask {
-						oneNote = false
-						break
-					}
-				}
-			}
-			if length >= max(DrumMinRun, 2*p) && length > bestLen && !oneNote {
-				bestLen, bestP = length, p
-			}
-		}
-		if bestP == 0 {
-			i++
-			continue
-		}
-		var hold []drumHold
-		for k := i; k < i+bestP; k++ {
-			for _, s := range events[k].sounds {
-				seen := false
-				for _, h := range hold {
-					if h.id == s.id {
-						seen = true
-						break
-					}
-				}
-				if !seen {
-					hold = append(hold, drumHold{s.id, s.pan})
-				}
-			}
-		}
-		events[i].hold = hold
-		for k := i + bestP; k < i+bestLen; k++ {
-			events[k].inRun, events[k].repeat = true, false
-		}
-		i += bestLen
-	}
 }
 
 // ScheduleDrums is every drum sound, the way DrumSound.Tick fires it:
@@ -172,7 +109,7 @@ func drumRuns(events []*drumEvent) {
 // fills are the chart's drum fills. sim is the star power bar (nil: never activatable, every phrase
 // start chimes).
 //
-// With calls (Listen and Repeat, from CutDrums) each note's pads play at its call: every note sounds
+// With calls (Listen and Repeat, from CutDrums) each note's pads play at its call: every note sounds,
 // lane notes play as plain notes, and the answer has no sounds.
 func ScheduleDrums(notes []*chartfile.DrumNote, mode string, settings *Settings, bank *Bank, calls *Calls,
 	fills []chartfile.Phrase, sim *StarSim) []*Play {
@@ -187,7 +124,6 @@ func ScheduleDrums(notes []*chartfile.DrumNote, mode string, settings *Settings,
 	var events []*drumEvent
 	var lanes []*drumLane
 	var lane *drumLane
-	var prev *drumEvent
 	for _, n := range notes {
 		e := &drumEvent{note: n, call: calls.Of(n)}
 		for _, h := range n.Hits {
@@ -229,43 +165,21 @@ func ScheduleDrums(notes []*chartfile.DrumNote, mode string, settings *Settings,
 		if len(e.sounds) == 0 {
 			continue
 		}
-		e.gap = math.Inf(1)
-		if prev != nil {
-			e.gap = n.Time - prev.note.Time
-		}
-		e.repeat = prev != nil && e.mask == prev.mask && e.gap < DrumRepeatGap && e.call == nil
 		events = append(events, e)
-		prev = e
 	}
 	if lane != nil {
 		lanes = append(lanes, lane)
 	}
-	// Every drum note plays its own pads: no held runs, no "same again" tick.
 	for _, e := range events {
 		e.cue = e.note.Time - lead
 		if e.call != nil {
 			e.cue = e.call.Time
 		}
 	}
-	for i, h := range events {
-		if len(h.hold) == 0 {
-			continue
-		}
-		h.holdStop = h.note.Time
-		k := i + 1
-		for k < len(events) && events[k].inRun {
-			h.holdStop = events[k].note.Time
-			k++
-		}
-		if k < len(events) {
-			h.holdStop = pmin(h.holdStop, events[k].cue)
-		}
-	}
 	order := make([]*drumEvent, len(events))
 	copy(order, events)
 	sort.SliceStable(order, func(i, j int) bool { return order[i].cue < order[j].cue })
 
-	holding := !settings.CueRepeats
 	lastCueTime, lastSpark := -999.0, -999.0
 	var lastCueMask uint16
 	star := func(n *chartfile.DrumNote, cue float64) {
@@ -281,19 +195,6 @@ func ScheduleDrums(notes []*chartfile.DrumNote, mode string, settings *Settings,
 		n, cue := e.note, e.cue
 		if e.activator && sim.CanActivate(cue) {
 			play(newPlay(cue, bank.Activator, 0.0, 0.8*vol("drumactivator")*master))
-		}
-		if e.inRun && holding {
-			star(n, cue)
-			continue
-		}
-		if len(e.hold) > 0 && holding {
-			for _, h := range e.hold {
-				level := 0.6
-				if h.id == "kick" {
-					level = 0.8
-				}
-				play(newHold(cue, bank.Holds[h.id], h.pan, level*vol(h.id)*master, e.holdStop))
-			}
 		}
 		soon := n.Time-lastCueTime < DrumMinGap
 		if !soon || e.mask&^lastCueMask != 0 {

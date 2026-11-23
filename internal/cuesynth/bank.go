@@ -32,21 +32,20 @@ func tapKnock(f int) []float64 {
 // the key's pentatonic scale; the caller passes A minor when the key is unknown, as the mod does.
 //
 // A five-fret bank (drums false) has Strike, Hammer, Pull, Tap and Hold per fret (index 0 = open),
-// Chord, Click and Release. A drums bank has Pads, Holds, Repeat, Click, Ghost and Accent. Both have Riser, SPNote,
+// Chord, Click and Release. A drums bank has Pads, Click, Ghost and Accent. Both have Riser, SPNote,
 // SPStart, Beat, Measure and the Listen and Repeat swells, Listen and YourTurn.
 type Bank struct {
 	Strike, Hammer, Pull, Tap, Hold []*Sound
 	Chord, Click, Release           *Sound
 
-	Pads, Holds map[string]*Sound
-	Repeat      *Sound
-	Activator   *Sound // drums: the star power hit, played with a fill's last note
-	Ghost       *Sound // drums: the whisper played with a ghost note's pad
-	Accent      *Sound // drums: the sharp crack played with an accent's pad
-	padHz       map[string]float64
-	rolls       map[string]*Sound
-	fillRises   map[int]*Sound
-	top         float64
+	Pads      map[string]*Sound
+	Activator *Sound // drums: the star power hit, played with a fill's last note
+	Ghost     *Sound // drums: the whisper played with a ghost note's pad
+	Accent    *Sound // drums: the sharp crack played with an accent's pad
+	padHz     map[string]float64
+	rolls     map[string]*Sound
+	fillRises map[int]*Sound
+	top       float64
 
 	Riser, SPNote, SPStart, Beat, Measure *Sound
 	Listen, YourTurn                      *Sound
@@ -101,23 +100,19 @@ func (b *Bank) buildDrums(root int, steps []int) {
 	pad := func(midi int, bright float64) []float64 {
 		return Tone(MidiToHz(float64(midi)), 0.22, 0.002, 0.07, bright, 0.5)
 	}
-	b.Pads, b.Holds = map[string]*Sound{}, map[string]*Sound{}
+	b.Pads = map[string]*Sound{}
 	b.Pads["kick"] = snd(pad(root-12, 0.9))
-	b.Holds["kick"] = snd(Loop(MidiToHz(float64(root-12)), 0.5, 0.2))
 	b.padHz["kick"] = MidiToHz(float64(root - 12))
 	for i, pid := range []string{"padred", "padyellow", "padblue", "padgreen", "padgreen5"} {
 		b.Pads[pid] = snd(pad(root+steps[i], 0.8))
-		b.Holds[pid] = snd(Loop(MidiToHz(float64(root+steps[i])), 0.5, 0.2))
 		b.padHz[pid] = MidiToHz(float64(root + steps[i]))
 	}
 	for i, cid := range []string{"cymyellow", "cymblue", "cymgreen"} {
 		shimmer := Noise(7000, 0.12, 0.001, 0.04, 0.12, 110+int64(i))
 		body := Tone(MidiToHz(float64(root+steps[i+1]+12)), 0.4, 0.002, 0.14, 0.4, 0.42)
-		b.Holds[cid] = snd(Loop(MidiToHz(float64(root+steps[i+1]+12)), 0.3, 0.16))
 		b.Pads[cid] = snd(Overlay(body, shimmer, 0))
 		b.padHz[cid] = MidiToHz(float64(root + steps[i+1] + 12))
 	}
-	b.Repeat = snd(Noise(3200, 0.04, 0.0005, 0.01, 0.45, 106))
 	b.Click = snd(Noise(1200, 0.04, 0.0005, 0.008, 0.5, 52))
 	top := MidiToHz(float64(root + 12))
 	b.Activator = snd(Overlay(Sequence([]float64{top * 1.5, top * 2, top * 3}, 0.035, 0.12, 0.3, 0.35),

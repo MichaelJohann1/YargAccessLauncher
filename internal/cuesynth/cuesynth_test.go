@@ -189,10 +189,9 @@ func TestChartDrumsAndSounds(t *testing.T) {
 	s := DefaultSettings()
 	bank := NewBank(9, true, s.LookAhead, true)
 	plays := ScheduleDrums(notes, ch.DrumMode, s, bank, nil, nil, nil)
-	kick, repeat, ghost, whisper, accent, crack, marks := false, false, false, false, false, false, 0
+	kick, ghost, whisper, accent, crack, marks := false, false, false, false, false, 0
 	for _, p := range plays {
 		kick = kick || p.Sound == bank.Pads["kick"] && near(p.Start, -0.2)
-		repeat = repeat || p.Sound == bank.Repeat
 		// The ghost (1.0 s) and the accent (1.5 s) play the Drums Look-ahead early, each with its mark
 		// at the same time and pan.
 		ghost = ghost || p.Sound == bank.Pads["padblue"] && near(p.Volume, 0.35) && near(p.Start, 0.8) && near(p.Pan, 0.25)
@@ -208,8 +207,8 @@ func TestChartDrumsAndSounds(t *testing.T) {
 			}
 		}
 	}
-	if !kick || repeat || !ghost || !whisper || !accent || !crack || marks != 2 {
-		t.Fatalf("kick %v repeat %v ghost %v whisper %v accent %v crack %v marks %d", kick, repeat, ghost, whisper, accent, crack, marks)
+	if !kick || !ghost || !whisper || !accent || !crack || marks != 2 {
+		t.Fatalf("kick %v ghost %v whisper %v accent %v crack %v marks %d", kick, ghost, whisper, accent, crack, marks)
 	}
 	beats := BeatTicks(ch.Tempo, s, bank, 2.1)
 	want := []struct {
@@ -223,8 +222,8 @@ func TestChartDrumsAndSounds(t *testing.T) {
 	}
 }
 
-// Every drum note plays its own pads: a repeating rhythm has no held tones, no
-// "same again" tick, no hit bar riser or click.
+// Every drum note plays its own pads: a repeating rhythm has no held tones,
+// no hit bar riser or click.
 func TestDrumRepeatsPlayEveryNote(t *testing.T) {
 	H := chartfile.NewDrumHit
 	var notes []*chartfile.DrumNote
@@ -241,8 +240,8 @@ func TestDrumRepeatsPlayEveryNote(t *testing.T) {
 			if p.Sound == bank.Pads["kick"] {
 				kicks++
 			}
-			if p.Looped || p.Sound == bank.Riser || p.Sound == bank.Click || p.Sound == bank.Repeat {
-				t.Fatalf("held, riser, click or repeat sound (Cue Repeated Notes %v)", cue)
+			if p.Looped || p.Sound == bank.Riser || p.Sound == bank.Click {
+				t.Fatalf("held, riser or click sound (Cue Repeated Notes %v)", cue)
 			}
 		}
 		if kicks != 8 {
