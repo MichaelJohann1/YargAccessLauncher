@@ -1,5 +1,12 @@
 # Changelog
 
+11/27/2026 (0.1.3):
+
+- The calibrator works with a controller or guitar that has no profile. Every button counts as a tap except B, Red and View or Select, and the prompt now says which button to avoid.
+- Back while the calibrator waits for your first press no longer starts the clicks for a moment, and stopping the clicks early turns YARG's Whammy FX setting back on.
+- Strum, the d-pad and the arrow keys no longer read the help list while the clicks play. The calibration result is spoken in your language.
+- The Getting Started tutorial has a new page, Setting your timing, before the song library, that walks you through the calibrator. The Settings tutorial now points to it.
+
 11/27/2026 (0.1.2):
 
 - Listen and Repeat handles time signature changes. Each listen bar is now as long as the bar you answer, so the calls stay on the beat in songs with time signature changes. Where the bar length changes, a pattern gets shorter or starts a bar later.
