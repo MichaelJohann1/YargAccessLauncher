@@ -1,5 +1,10 @@
 # Changelog
 
+11/27/2026 (0.1.2):
+
+- Listen and Repeat handles time signature changes. Each listen bar is now as long as the bar you answer, so the calls stay on the beat in songs like Rush's. Where the bar length changes, a pattern gets shorter or starts a bar later.
+- New on the YargAccess tab: Mono Sound plays every cue from the centre, for players who hear with one ear or use one speaker. Pitch still tells the lanes apart. The Settings tutorial has a page on it.
+
 11/20/2026 (0.1.1):
 
 - Listen and Repeat patterns are now whole bars of music and always start on a bar line, instead of a number of notes. Call Length is 1, 2 or 4 bars. 2 bars is the new default and recommended, and a length you saved before this update goes back to 2 once.

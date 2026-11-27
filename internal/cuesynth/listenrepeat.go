@@ -45,11 +45,12 @@ func (c *Calls) Of(note any) *Call {
 	return c.marks[note]
 }
 
-// plan is ListenRepeat.PlanBars: the answer is `size` whole bars starting on a bar line, the listen is
-// the `size` bars before it, and each answer note's call is the note moved back by the listen's length
-// in ticks. The chart's notes in the listen bars are taken out, and the next listen starts after the
-// answer (or where the notes come back after a rest). A note whose call would not fit in a shorter
-// listen bar (a time signature change) is taken out. It returns each grouped note's call, nil for a
+// plan is ListenRepeat.PlanBars: the answer is up to `size` whole bars starting on a bar line, the
+// listen is as many bars before it, each as long as its answer bar (pickWindow), and each answer note's
+// call is the same distance into its listen bar as the note is into its answer bar. The chart's notes in
+// the listen bars are taken out, and the next listen starts after the answer (or where the notes come
+// back after a rest). A note whose call would not fit in a slightly shorter listen bar is taken out.
+// It returns each grouped note's call, nil for a
 // note taken out or a fixed one. ends are the notes' end ticks (their longest sustain). Fixed notes
 // (big rock endings) are never grouped or taken out.
 func plan(ticks, ends []int, times []float64, fixed []bool, tempo *chartfile.TempoMap, size int) ([]*Call, []*Group) {
@@ -64,47 +65,80 @@ func plan(ticks, ends []int, times []float64, fixed []bool, tempo *chartfile.Tem
 		last = max(last, ticks[i], ends[i])
 	}
 	bars := barTicks(tempo, ticks[0], last, 2*size+2)
-	minAnswer := size
+	tol := max(1, tempo.Resolution/8)
+	free := 0 // the first bar the next listen may use
 	for k := 0; k < n; {
 		if fixed[k] {
 			k++
 			continue
 		}
-		s := max(barOf(bars, ticks[k]), minAnswer)
-		if s+size >= len(bars) {
+		s, sz := pickWindow(bars, barOf(bars, ticks[k]), free, size, tol)
+		if sz == 0 {
 			break
 		}
-		callStart, start, end := bars[s-size], bars[s], bars[s+size]
-		shift := start - callStart
+		callStart, start, end := bars[s-sz], bars[s], bars[s+sz]
 		j := k
 		for j < n && ticks[j] < start {
 			j++
 		}
 		var members []int
+		var callTicks []int
 		realEnd := end - 1
 		for ; j < n && ticks[j] < end; j++ {
-			if fixed[j] || ticks[j]-shift >= start {
+			if fixed[j] {
+				continue
+			}
+			// Each answer bar's notes play in the matching listen bar, the same distance into it.
+			b := barOf(bars, ticks[j]) - s
+			ct := bars[s-sz+b] + ticks[j] - bars[s+b]
+			if ct >= bars[s-sz+b+1] {
 				continue
 			}
 			members = append(members, j)
+			callTicks = append(callTicks, ct)
 			realEnd = max(realEnd, ends[j])
 		}
 		// The next listen starts on the first bar line after the answer, or after a held note that runs
 		// past it.
-		minAnswer = barOf(bars, realEnd) + 1 + size
+		free = barOf(bars, realEnd) + 1
 		k = j
 		if len(members) == 0 {
 			continue
 		}
 		g := &Group{CallStartTick: callStart, StartTick: start, EndTick: realEnd,
 			CallStart: tempo.Time(callStart), CallEnd: tempo.Time(start), Start: tempo.Time(start), End: tempo.Time(realEnd)}
-		for _, m := range members {
-			marks[m] = &Call{Time: tempo.Time(ticks[m] - shift), Group: g}
+		for i, m := range members {
+			marks[m] = &Call{Time: tempo.Time(callTicks[i]), Group: g}
 		}
 		groups = append(groups, g)
 	}
 	sort.SliceStable(groups, func(a, b int) bool { return groups[a].CallStart < groups[b].CallStart })
 	return marks, groups
+}
+
+// pickWindow is ListenRepeat.PickWindow: the answer's first bar and the window's length in bars for the
+// next group, whose notes start in bar `from`. The listen is the bars just before the answer and must not
+// start before bar `free`. Each listen bar must be as long as its answer bar (a time signature change
+// would put the call off the beat), so at a change the window gets shorter, or starts a bar later (that
+// bar's notes are then in the listen and taken out). Returns sz 0 when no window fits.
+func pickWindow(bars []int, from, free, size, tol int) (int, int) {
+	for ; from+1 < len(bars); from++ {
+		for sz := size; sz >= 1; sz-- {
+			s := max(from, free+sz)
+			if s+sz >= len(bars) {
+				continue
+			}
+			ok := true
+			for i := 0; i < sz && ok; i++ {
+				a, b := bars[s-sz+i+1]-bars[s-sz+i], bars[s+i+1]-bars[s+i]
+				ok = a-b <= tol && b-a <= tol
+			}
+			if ok {
+				return s, sz
+			}
+		}
+	}
+	return 0, 0
 }
 
 // barTicks is ListenRepeat.BarTicks: the bar lines from before the first note to `extra` bars past the

@@ -27,18 +27,34 @@ func eighthsChart() string {
 // groups come in call order.
 func checkCalls(t *testing.T, c *Calls, tempo *chartfile.TempoMap, ticks []int, calls []*Call) {
 	t.Helper()
+	bars := barTicks(tempo, 0, ticks[len(ticks)-1], 20)
 	onBar := map[int]bool{}
-	for _, b := range barTicks(tempo, 0, ticks[len(ticks)-1], 20) {
+	for _, b := range bars {
 		onBar[b] = true
 	}
+	tol := max(1, tempo.Resolution/8)
 	for i, call := range calls {
+		if call == nil {
+			continue // a big rock ending note: kept, no call
+		}
 		g := call.Group
-		shift := g.StartTick - g.CallStartTick
-		if shift <= 0 || !onBar[g.StartTick] || !onBar[g.CallStartTick] {
+		if g.StartTick <= g.CallStartTick || !onBar[g.StartTick] || !onBar[g.CallStartTick] {
 			t.Fatalf("note %d: listen at tick %d or answer at %d is not on a bar line", i, g.CallStartTick, g.StartTick)
 		}
-		if math.Abs(call.Time-tempo.Time(ticks[i]-shift)) > 1e-9 {
-			t.Fatalf("note %d: call at %v, want %v", i, call.Time, tempo.Time(ticks[i]-shift))
+		// The call is the same distance into its listen bar as the note is into its answer bar, and each
+		// listen bar is as long as its answer bar.
+		lb, ab := barOf(bars, g.CallStartTick), barOf(bars, g.StartTick)
+		b := barOf(bars, ticks[i]) - ab
+		if b < 0 || b >= ab-lb {
+			t.Fatalf("note %d: tick %d is outside its answer", i, ticks[i])
+		}
+		la, aa := bars[lb+b+1]-bars[lb+b], bars[ab+b+1]-bars[ab+b]
+		if la-aa > tol || aa-la > tol {
+			t.Fatalf("note %d: listen bar of %d ticks for an answer bar of %d", i, la, aa)
+		}
+		want := tempo.Time(bars[lb+b] + ticks[i] - bars[ab+b])
+		if math.Abs(call.Time-want) > 1e-9 {
+			t.Fatalf("note %d: call at %v, want %v", i, call.Time, want)
 		}
 	}
 	for i, g := range c.Groups {

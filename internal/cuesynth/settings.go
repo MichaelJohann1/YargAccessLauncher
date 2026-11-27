@@ -12,6 +12,7 @@ type Settings struct {
 	LookAhead     float64 // seconds; guitar, bass and keys
 	DrumLookAhead float64 // seconds
 	CueRepeats    bool
+	Mono          bool // Mono Sound: every cue in the centre
 	BeatTicks     bool
 	ListenRepeat  bool    // Play Style: Listen and Repeat (false: Play What You Hear)
 	CallLength    int     // Listen and Repeat: bars in each pattern, 1, 2 or 4
@@ -91,6 +92,7 @@ func ReadSettings(gameDir string) *Settings {
 		s.DrumLookAhead = 0.2
 	}
 	s.CueRepeats = strings.ToLower(get("CueRepeats", "false")) == "true"
+	s.Mono = strings.ToLower(get("MonoCues", "false")) == "true"
 	s.BeatTicks = strings.ToLower(get("BeatTicks", "true")) == "true"
 	// ModSettings: PlayMode is "repeat" or "hear" (anything else is put back to "repeat"); CallLength
 	// is "1", "2" or "4" (anything else is put back to "2"). Without CallLengthBars the saved value

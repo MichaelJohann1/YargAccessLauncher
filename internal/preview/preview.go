@@ -216,6 +216,11 @@ func Prepare(path, part, difficulty, gameDir string, previewStartMs int, listenR
 		start = math.Max(0, math.Min(start, calls.Groups[0].CallStart-cuesynth.SwellLength-1.5))
 	}
 	plays = append(plays, cuesynth.BeatTicks(chart.Tempo, settings, bank, end)...)
+	if settings.Mono {
+		for _, p := range plays {
+			p.Pan = 0
+		}
+	}
 	track := cuesynth.NewCueTrack(plays, end)
 
 	var stems [][]byte

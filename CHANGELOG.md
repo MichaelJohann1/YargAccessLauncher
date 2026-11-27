@@ -1,5 +1,10 @@
 # Changelog
 
+11/27/2026 (0.1.3):
+
+- The song preview's Listen and Repeat matches YargAccess 0.1.2 at time signature changes: each listen bar is as long as the bar you answer.
+- The song preview follows the Mono Sound setting.
+
 11/20/2026 (0.1.2):
 
 - The song preview's Listen and Repeat now matches YargAccess 0.1.1: patterns are whole bars that start on a bar line, and Call Length is 1, 2 or 4 bars, 2 by default.
