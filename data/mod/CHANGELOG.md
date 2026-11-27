@@ -2,7 +2,7 @@
 
 11/27/2026 (0.1.2):
 
-- Listen and Repeat handles time signature changes. Each listen bar is now as long as the bar you answer, so the calls stay on the beat in Rush songs. Where the bar length changes, a pattern gets shorter or starts a bar later.
+- Listen and Repeat handles time signature changes. Each listen bar is now as long as the bar you answer, so the calls stay on the beat in songs with time signature changes. Where the bar length changes, a pattern gets shorter or starts a bar later.
 - New on the YargAccess tab: Mono Sound plays every cue from the centre, for players who hear with one ear or use one speaker. Pitch still tells the lanes apart. The Settings tutorial has a page on it.
 
 11/20/2026 (0.1.1):
