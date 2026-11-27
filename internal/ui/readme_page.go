@@ -134,6 +134,9 @@ func (p *ReadmePage) OpenDocument() {
 	speech.Speak(fmt.Sprintf("Opening %s.", docpages.Documents[i].Name), true)
 	if p.host != nil && p.embed() {
 		p.focusWhenLoaded = true
+		if err := p.web.Show(); err != nil {
+			log.Printf("Showing the document viewer: %v", err)
+		}
 		p.web.NavigateToString(docpages.DocumentPage(i, true))
 		return
 	}
@@ -151,6 +154,11 @@ func (p *ReadmePage) CloseDocument() {
 	p.openIndex = -1
 	p.focusWhenLoaded = false
 	if p.web != nil {
+		// Hidden while no document is open: WebView2 keeps Tab inside its page, so a blank page left
+		// visible trapped keyboard focus there (about:blank) with no way back to the list.
+		if err := p.web.Hide(); err != nil {
+			log.Printf("Hiding the document viewer: %v", err)
+		}
 		p.web.NavigateToString(docpages.Page("Documents", "", false))
 	} else if p.text != nil {
 		p.text.SetText("")
