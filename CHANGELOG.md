@@ -1,5 +1,9 @@
 # Changelog
 
+11/27/2026 (0.1.5):
+
+- The Documents tab has the YargAccess 0.1.4 read me and changelog: tutorial practice lists the computer keyboard and asks which device to use when more than one fits.
+
 11/27/2026 (0.1.4):
 
 - The Documents tab has the YargAccess 0.1.3 changelog: calibrator fixes for controllers and Back, and the new Setting your timing page in Getting Started.

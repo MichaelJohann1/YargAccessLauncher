@@ -1,5 +1,10 @@
 # Changelog
 
+11/27/2026 (0.1.4):
+
+- Tutorial practice and Practice The Buttons list the computer keyboard as a device. When more than one device could be played on, such as the keyboard and a controller, they ask which one to use instead of picking the controller. The device you pressed last is first in the list.
+- The read me and the Getting Started tutorial say how the device is chosen.
+
 11/27/2026 (0.1.3):
 
 - The calibrator works with a controller or guitar that has no profile. Every button counts as a tap except B, Red and View or Select, and the prompt now says which button to avoid.

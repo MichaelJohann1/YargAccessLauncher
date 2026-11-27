@@ -93,12 +93,13 @@ asks whether you want the tutorials. You can open them later from Tutorials on t
 just below Practice.
 
 Getting Started comes first: how the mod works, getting songs, profiles, how these games work,
-the play styles and the song library. Then a Settings tutorial covers the mod's own tab in YARG's
-Settings, and the rest cover each instrument, difficulties, scoring, star power, replays and
-practice mode. Each instrument tutorial ends with a practice: you hear every kind of note, then
-play it back on your own controller. The same list has a Sound Glossary,
-where you can hear every sound the mod makes, and Practice The Buttons. In any menu, F1 tells you
-the keys.
+the play styles, setting your timing with YARG's calibrator, and the song library. Then a
+Settings tutorial covers the mod's own tab in YARG's Settings, and the rest cover each
+instrument, difficulties, scoring, star power, replays and practice mode. Each instrument
+tutorial ends with a practice: you hear every kind of note, then play it back yourself. When
+more than one device could be played on, such as the computer keyboard and a controller, it asks
+which one to use. The same list has a Sound Glossary, where you can hear every sound the mod
+makes, and Practice The Buttons. In any menu, F1 tells you the keys.
 
 ## Getting help
 
